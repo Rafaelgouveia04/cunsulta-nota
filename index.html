@@ -3,1762 +3,768 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PUC — Analisador de Notas & Frequência</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<title>Analisador de Notas — PUC</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
   :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #18181f;
-    --border: #2a2a38;
-    --accent: #e8ff47;
-    --accent2: #ff4747;
-    --accent3: #47b8ff;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --ok: #47ff9c;
-    --warn: #ffb347;
-    --danger: #ff4747;
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #e8ff00;
+    --accent2: #ff4444;
+    --accent3: #44ff88;
+    --text: #f0f0f0;
+    --muted: #666;
+    --warn: #ff8800;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
     min-height: 100vh;
+    padding: 0;
     overflow-x: hidden;
   }
 
-  /* Grid background */
+  /* Noise overlay */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image:
-      linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 0;
+    opacity: 0.4;
   }
 
-  .container {
-    position: relative;
-    z-index: 1;
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 48px 24px 80px;
-  }
-
-  /* Header */
   header {
-    margin-bottom: 48px;
+    position: relative;
+    padding: 48px 40px 24px;
     border-bottom: 1px solid var(--border);
-    padding-bottom: 24px;
   }
 
-  .header-tag {
+  header .tag {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
+    font-size: 10px;
+    letter-spacing: 0.2em;
     color: var(--accent);
     text-transform: uppercase;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
-  h1 {
+  header h1 {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(52px, 8vw, 88px);
-    letter-spacing: 0.04em;
-    line-height: 0.9;
+    font-size: clamp(48px, 8vw, 96px);
+    letter-spacing: 0.02em;
+    line-height: 0.95;
     color: var(--text);
   }
 
-  h1 span {
-    color: var(--accent);
+  header h1 span { color: var(--accent); }
+
+  header p {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
   }
 
-  .subtitle {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 300;
-    color: var(--muted);
-    margin-top: 12px;
-    font-style: italic;
+  .main {
+    position: relative;
+    z-index: 1;
+    padding: 32px 40px 80px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
 
   /* Steps */
   .step {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 32px;
-    margin-bottom: 24px;
-    animation: fadeIn 0.4s ease;
+    display: none;
+    animation: fadeUp 0.35s ease forwards;
   }
+  .step.active { display: block; }
 
-  .step-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .step-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  h2 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 0.05em;
-    margin-bottom: 16px;
-    color: var(--text);
-  }
-
-  p {
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--muted);
-    margin-bottom: 16px;
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   /* Upload area */
   .upload-zone {
     border: 2px dashed var(--border);
     border-radius: 4px;
-    padding: 48px 24px;
+    padding: 60px 40px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.2s, background 0.2s;
     position: relative;
-    background: var(--surface2);
-  }
-
-  .upload-zone:hover, .upload-zone.dragging {
-    border-color: var(--accent);
-    background: rgba(232,255,71,0.04);
-  }
-
-  .upload-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .upload-icon {
-    font-size: 40px;
-    margin-bottom: 12px;
-  }
-
-  .upload-text {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  .upload-text strong {
-    color: var(--accent);
-  }
-
-  #preview-img {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 4px;
-    margin-top: 16px;
-    display: none;
-    border: 1px solid var(--border);
-  }
-
-  /* AI Score question */
-  .ai-callout {
-    background: rgba(232,255,71,0.06);
-    border: 1px solid rgba(232,255,71,0.25);
-    border-radius: 4px;
-    padding: 20px 24px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--text);
-  }
-
-  .ai-callout strong {
-    color: var(--accent);
-  }
-
-  .ai-options {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 16px;
-    margin-bottom: 20px;
-  }
-
-  .ai-opt-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--muted);
-    border-radius: 2px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .ai-opt-btn:hover, .ai-opt-btn.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(232,255,71,0.06);
-  }
-
-  /* Inputs */
-  .input-group {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  input[type="number"], input[type="text"] {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 16px;
-    border-radius: 2px;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 120px;
-  }
-
-  input[type="number"]:focus, input[type="text"]:focus {
-    border-color: var(--accent);
-  }
-
-  /* Button */
-  .btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    padding: 12px 28px;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.15s;
-    border: none;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #0a0a0f;
-    font-weight: 700;
-  }
-
-  .btn-primary:hover {
-    background: #fff;
-    transform: translateY(-1px);
-  }
-
-  .btn-primary:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .btn-ghost {
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-  }
-
-  .btn-ghost:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  /* Loading */
-  .loading {
-    display: none;
-    align-items: center;
-    gap: 12px;
-    padding: 20px 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--accent);
-  }
-
-  .loading.visible { display: flex; }
-
-  .spinner {
-    width: 20px; height: 20px;
-    border: 2px solid rgba(232,255,71,0.2);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  /* Results */
-  #results { display: none; }
-  #results.visible { display: block; animation: fadeIn 0.5s ease; }
-
-  .result-table-wrap {
-    overflow-x: auto;
-    margin: 20px 0;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  thead tr {
-    border-bottom: 2px solid var(--accent);
-  }
-
-  th {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    padding: 10px 14px;
-    text-align: left;
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  td:first-child {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    min-width: 180px;
-  }
-
-  tr:hover td { background: rgba(255,255,255,0.02); }
-
-  .badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 2px;
-    font-size: 11px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .badge-ok { background: rgba(71,255,156,0.12); color: var(--ok); border: 1px solid rgba(71,255,156,0.3); }
-  .badge-warn { background: rgba(255,179,71,0.12); color: var(--warn); border: 1px solid rgba(255,179,71,0.3); }
-  .badge-danger { background: rgba(255,71,71,0.12); color: var(--danger); border: 1px solid rgba(255,71,71,0.3); }
-  .badge-neutral { background: rgba(107,107,128,0.12); color: var(--muted); border: 1px solid var(--border); }
-
-  .num-danger { color: var(--danger); font-weight: 700; }
-  .num-warn { color: var(--warn); font-weight: 600; }
-  .num-ok { color: var(--ok); }
-
-  /* Summary cards */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 16px;
-    margin-top: 24px;
-  }
-
-  .summary-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 20px 24px;
-  }
-
-  .summary-card h3 {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 12px;
-  }
-
-  .summary-card ul {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .summary-card li {
-    font-size: 13px;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .summary-card li::before {
-    content: '▸';
-    color: var(--accent);
-    font-size: 10px;
-  }
-
-  .summary-card.danger-card {
-    border-color: rgba(255,71,71,0.3);
-    background: rgba(255,71,71,0.05);
-  }
-
-  .summary-card.danger-card h3 { color: var(--danger); }
-  .summary-card.danger-card li::before { color: var(--danger); }
-
-  /* Error */
-  .error-box {
-    background: rgba(255,71,71,0.08);
-    border: 1px solid rgba(255,71,71,0.3);
-    border-radius: 4px;
-    padding: 16px 20px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--danger);
-    margin-top: 16px;
-    display: none;
-  }
-
-  .error-box.visible { display: block; }
-
-  /* Divider */
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 32px 0;
-  }
-
-  /* Animations */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .reset-wrap {
     margin-top: 32px;
-    display: flex;
-    justify-content: flex-end;
   }
-
-  /* Manual fallback table */
-  .manual-section { display: none; }
-  .manual-section.visible { display: block; }
-
-  .row-inputs {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
-    align-items: center;
-  }
-
-  .row-inputs input {
-    width: 100%;
-  }
-
-  .row-inputs input:first-child {
-    font-family: 'IBM Plex Sans', sans-serif;
-  }
-
-  .col-headers {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .col-headers span {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--accent);
-    padding: 0 4px;
-  }
-
-  .add-row-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    background: transparent;
-    border: 1px dashed var(--border);
-    color: var(--muted);
-    padding: 8px 16px;
-    cursor: pointer;
-    border-radius: 2px;
-    margin-top: 4px;
-    transition: all 0.15s;
-  }
-
-  .add-row-btn:hover {
+  .upload-zone:hover, .upload-zone.drag {
     border-color: var(--accent);
-    color: var(--accent);
+    background: rgba(232,255,0,0.03);
   }
-
-  .remove-row {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 16px;
-    background: transparent;
-    border: none;
-    color: var(--danger);
-    cursor: pointer;
-    padding: 0 4px;
-    opacity: 0.5;
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-zone .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
   }
-
-  .remove-row:hover { opacity: 1; }
-
-  .toggle-method {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    cursor: pointer;
-    text-decoration: underline dotted;
-    background: none;
-    border: none;
-    padding: 0;
-    margin-top: 8px;
-    display: inline-block;
-  }
-
-  .toggle-method:hover { color: var(--accent); }
-
-  .method-tabs {
-    display: flex;
-    gap: 0;
-    margin-bottom: 20px;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    width: fit-content;
-  }
-
-  .method-tab {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 8px 18px;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    transition: all 0.15s;
-  }
-
-  .method-tab.active {
-    background: var(--accent);
-    color: #0a0a0f;
-    font-weight: 700;
-  }
-</style>
-</head>
-<body>
-<div class="container">
-
-  <header>
-    <div class="header-tag">// PUC · Sistema de Análise Acadêmica</div>
-    <h1>NOTAS &<br><span>FREQUÊNCIA</span></h1>
-    <p class="subtitle">Envie seu relatório e descubra exatamente onde você está.</p>
-  </header>
-
-  <!-- Step 1: Upload or manual -->
-  <div class="step" id="step1">
-    <div class="step-label">Passo 01</div>
-    <h2>SEU RELATÓRIO</h2>
-    <p>Escolha como deseja informar seus dados: enviando a foto/print do relatório da PUC, ou preenchendo manualmente.</p>
-
-    <div class="method-tabs">
-      <button class="method-tab active" onclick="setMethod('photo')">📸 Foto / Print</button>
-      <button class="method-tab" onclick="setMethod('manual')">✏️ Manual</button>
-    </div>
-
-    <!-- Photo mode -->
-    <div id="photo-mode">
-      <div class="upload-zone" id="upload-zone">
-        <input type="file" id="file-input" accept="image/*" onchange="handleFile(this)">
-        <div class="upload-icon">📄</div>
-        <div class="upload-text">
-          <strong>Clique aqui</strong> ou arraste sua foto/print<br>
-          <span style="font-size:11px">JPG, PNG, WEBP — relatório do Portal PUC</span>
-        </div>
-      </div>
-      <img id="preview-img" alt="Preview do relatório">
-    </div>
-
-    <!-- Manual mode -->
-    <div id="manual-mode" class="manual-section">
-      <div class="col-headers">
-        <span>Disciplina</span>
-        <span>Aulas previstas</span>
-        <span>Aulas dadas</span>
-        <span>Presenças</span>
-        <span>N1</span>
-      </div>
-      <div id="rows-container"></div>
-      <button class="add-row-btn" onclick="addRow()">+ Adicionar disciplina</button>
-    </div>
-
-  </div>
-
-  <!-- Step 2: AI Score -->
-  <div class="step" id="step2" style="display:none">
-    <div class="step-label">Passo 02</div>
-    <h2>NOTA DA AI</h2>
-    <div class="ai-callout">
-      <strong>Qual foi sua nota da AI?</strong><br>
-      Lembrando: a AI é uma prova única e essa mesma nota vale para todas as disciplinas, somando até 1 ponto na N2. Se ainda não souber, posso calcular com 0, com 1 ponto máximo, ou com uma nota estimada.
-    </div>
-    <div class="ai-options">
-      <button class="ai-opt-btn" onclick="setAI(0)">Ainda não fiz / 0</button>
-      <button class="ai-opt-btn" onclick="setAI(1)">Máximo (1,0)</button>
-      <button class="ai-opt-btn" onclick="setAI(0.5)">Estimado (0,5)</button>
-      <button class="ai-opt-btn" id="custom-ai-btn" onclick="focusAIInput()">Outra nota →</button>
-    </div>
-    <div class="input-group">
-      <input type="number" id="ai-score" placeholder="0.0" min="0" max="1" step="0.1" style="display:none">
-      <button class="btn btn-primary" id="calc-btn" onclick="calculate()" disabled>CALCULAR →</button>
-    </div>
-    <div class="loading" id="loading">
-      <div class="spinner"></div>
-      <span id="loading-text">Analisando relatório com IA...</span>
-    </div>
-    <div class="error-box" id="error-box"></div>
-  </div>
-
-  <!-- Results -->
-  <div id="results">
-    <div class="step">
-      <div class="step-label">Resultado</div>
-      <h2>ANÁLISE COMPLETA</h2>
-      <div class="result-table-wrap">
-        <table id="result-table">
-          <thead>
-            <tr>
-              <th>Disciplina</th>
-              <th>Faltas atuais</th>
-              <th>Pode faltar ainda</th>
-              <th>N1</th>
-              <th>AI</th>
-              <th>Precisa na prova N2</th>
-              <th>Situação</th>
-            </tr>
-          </thead>
-          <tbody id="result-tbody"></tbody>
-        </table>
-      </div>
-      <div class="summary-grid" id="summary-grid"></div>
-      <div class="reset-wrap">
-        <button class="btn btn-ghost" onclick="reset()">← Nova análise</button>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-</body>
-</html><!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PUC — Analisador de Notas & Frequência</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #18181f;
-    --border: #2a2a38;
-    --accent: #e8ff47;
-    --accent2: #ff4747;
-    --accent3: #47b8ff;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --ok: #47ff9c;
-    --warn: #ffb347;
-    --danger: #ff4747;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Grid background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 48px 24px 80px;
-  }
-
-  /* Header */
-  header {
-    margin-bottom: 48px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 24px;
-  }
-
-  .header-tag {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(52px, 8vw, 88px);
-    letter-spacing: 0.04em;
-    line-height: 0.9;
-    color: var(--text);
-  }
-
-  h1 span {
-    color: var(--accent);
-  }
-
-  .subtitle {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 300;
-    color: var(--muted);
-    margin-top: 12px;
-    font-style: italic;
-  }
-
-  /* Steps */
-  .step {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 32px;
-    margin-bottom: 24px;
-    animation: fadeIn 0.4s ease;
-  }
-
-  .step-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .step-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  h2 {
+  .upload-zone h2 {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 28px;
     letter-spacing: 0.05em;
-    margin-bottom: 16px;
-    color: var(--text);
+    margin-bottom: 8px;
   }
-
-  p {
-    font-size: 14px;
-    line-height: 1.7;
+  .upload-zone p {
     color: var(--muted);
-    margin-bottom: 16px;
+    font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
   }
 
-  /* Upload area */
-  .upload-zone {
-    border: 2px dashed var(--border);
-    border-radius: 4px;
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
+  .preview-wrap {
+    margin-top: 24px;
+    display: none;
     position: relative;
-    background: var(--surface2);
   }
-
-  .upload-zone:hover, .upload-zone.dragging {
-    border-color: var(--accent);
-    background: rgba(232,255,71,0.04);
-  }
-
-  .upload-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
+  .preview-wrap img {
     width: 100%;
-    height: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: block;
+  }
+  .preview-wrap .badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--accent);
+    color: #000;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
-  .upload-icon {
-    font-size: 40px;
+  /* AI Note question */
+  .ai-box {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    padding: 28px 32px;
+    border-radius: 4px;
+  }
+  .ai-box .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
     margin-bottom: 12px;
   }
-
-  .upload-text {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  .upload-text strong {
-    color: var(--accent);
-  }
-
-  #preview-img {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 4px;
-    margin-top: 16px;
-    display: none;
-    border: 1px solid var(--border);
-  }
-
-  /* AI Score question */
-  .ai-callout {
-    background: rgba(232,255,71,0.06);
-    border: 1px solid rgba(232,255,71,0.25);
-    border-radius: 4px;
-    padding: 20px 24px;
+  .ai-box h3 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.5;
     margin-bottom: 20px;
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--text);
   }
-
-  .ai-callout strong {
-    color: var(--accent);
-  }
-
   .ai-options {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-top: 16px;
     margin-bottom: 20px;
   }
-
-  .ai-opt-btn {
+  .ai-options button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--muted);
-    border-radius: 2px;
+    padding: 8px 18px;
     cursor: pointer;
     transition: all 0.15s;
+    letter-spacing: 0.05em;
   }
-
-  .ai-opt-btn:hover, .ai-opt-btn.active {
+  .ai-options button:hover, .ai-options button.selected {
+    background: var(--accent);
+    color: #000;
     border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(232,255,71,0.06);
   }
 
-  /* Inputs */
-  .input-group {
+  .ai-custom {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
     flex-wrap: wrap;
   }
-
-  input[type="number"], input[type="text"] {
+  .ai-custom label {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .ai-custom input {
     background: var(--surface2);
     border: 1px solid var(--border);
     color: var(--text);
-    padding: 10px 16px;
-    border-radius: 2px;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 120px;
-  }
-
-  input[type="number"]:focus, input[type="text"]:focus {
-    border-color: var(--accent);
-  }
-
-  /* Button */
-  .btn {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    padding: 12px 28px;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.15s;
-    border: none;
+    font-size: 14px;
+    padding: 8px 14px;
+    width: 100px;
+    outline: none;
+    transition: border-color 0.15s;
   }
+  .ai-custom input:focus { border-color: var(--accent); }
 
+  /* CTA button */
   .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 28px;
     background: var(--accent);
-    color: #0a0a0f;
-    font-weight: 700;
+    color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    padding: 14px 36px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
   }
-
   .btn-primary:hover {
     background: #fff;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(232,255,0,0.2);
   }
-
   .btn-primary:disabled {
     opacity: 0.4;
     cursor: not-allowed;
     transform: none;
-  }
-
-  .btn-ghost {
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-  }
-
-  .btn-ghost:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    box-shadow: none;
   }
 
   /* Loading */
   .loading {
+    margin-top: 40px;
     display: none;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
-    padding: 20px 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--accent);
+    gap: 20px;
   }
-
   .loading.visible { display: flex; }
-
-  .spinner {
-    width: 20px; height: 20px;
-    border: 2px solid rgba(232,255,71,0.2);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  .loader-bar {
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .loader-bar::after {
+    content: '';
+    position: absolute;
+    left: -40%;
+    width: 40%;
+    height: 100%;
+    background: var(--accent);
+    animation: slide 1s ease-in-out infinite;
+  }
+  @keyframes slide {
+    from { left: -40%; }
+    to   { left: 100%; }
+  }
+  .loading p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   /* Results */
-  #results { display: none; }
-  #results.visible { display: block; animation: fadeIn 0.5s ease; }
-
-  .result-table-wrap {
-    overflow-x: auto;
-    margin: 20px 0;
+  .result-header {
+    margin-bottom: 28px;
+  }
+  .result-header .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .result-header h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 0.04em;
   }
 
+  /* Table */
+  .table-wrap {
+    overflow-x: auto;
+    margin-bottom: 40px;
+    border: 1px solid var(--border);
+  }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  thead tr {
-    border-bottom: 2px solid var(--accent);
-  }
-
-  th {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    padding: 10px 14px;
-    text-align: left;
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
-    color: var(--muted);
   }
-
-  td:first-child {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    min-width: 180px;
-  }
-
-  tr:hover td { background: rgba(255,255,255,0.02); }
-
-  .badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 2px;
-    font-size: 11px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .badge-ok { background: rgba(71,255,156,0.12); color: var(--ok); border: 1px solid rgba(71,255,156,0.3); }
-  .badge-warn { background: rgba(255,179,71,0.12); color: var(--warn); border: 1px solid rgba(255,179,71,0.3); }
-  .badge-danger { background: rgba(255,71,71,0.12); color: var(--danger); border: 1px solid rgba(255,71,71,0.3); }
-  .badge-neutral { background: rgba(107,107,128,0.12); color: var(--muted); border: 1px solid var(--border); }
-
-  .num-danger { color: var(--danger); font-weight: 700; }
-  .num-warn { color: var(--warn); font-weight: 600; }
-  .num-ok { color: var(--ok); }
-
-  /* Summary cards */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 16px;
-    margin-top: 24px;
-  }
-
-  .summary-card {
+  thead tr {
     background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 20px 24px;
+    border-bottom: 2px solid var(--accent);
   }
-
-  .summary-card h3 {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 9px;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--accent);
-    margin-bottom: 12px;
+    white-space: nowrap;
   }
-
-  .summary-card ul {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
   }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
 
-  .summary-card li {
+  .disc-name {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
     font-size: 13px;
-    color: var(--text);
+    max-width: 200px;
+  }
+
+  .badge-ok {
+    background: rgba(68,255,136,0.12);
+    color: var(--accent3);
+    border: 1px solid rgba(68,255,136,0.3);
+    padding: 3px 10px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .badge-warn {
+    background: rgba(255,136,0,0.12);
+    color: var(--warn);
+    border: 1px solid rgba(255,136,0,0.3);
+    padding: 3px 10px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .badge-danger {
+    background: rgba(255,68,68,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(255,68,68,0.3);
+    padding: 3px 10px;
+    font-size: 10px;
+  }
+  .badge-neutral {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  /* Summary boxes */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .sum-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    border-radius: 2px;
+  }
+  .sum-box.critical { border-left: 4px solid var(--accent2); }
+  .sum-box.warn { border-left: 4px solid var(--warn); }
+  .sum-box.ok { border-left: 4px solid var(--accent3); }
+  .sum-box .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .sum-box ul {
+    list-style: none;
+    padding: 0;
+  }
+  .sum-box ul li {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     gap: 8px;
   }
+  .sum-box ul li:last-child { border-bottom: none; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-red { background: var(--accent2); }
+  .dot-warn { background: var(--warn); }
+  .dot-green { background: var(--accent3); }
 
-  .summary-card li::before {
-    content: '▸';
-    color: var(--accent);
-    font-size: 10px;
+  /* Reset btn */
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 8px 18px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
   }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
 
-  .summary-card.danger-card {
-    border-color: rgba(255,71,71,0.3);
-    background: rgba(255,71,71,0.05);
-  }
-
-  .summary-card.danger-card h3 { color: var(--danger); }
-  .summary-card.danger-card li::before { color: var(--danger); }
-
-  /* Error */
+  /* Error box */
   .error-box {
-    background: rgba(255,71,71,0.08);
-    border: 1px solid rgba(255,71,71,0.3);
-    border-radius: 4px;
-    padding: 16px 20px;
+    background: rgba(255,68,68,0.08);
+    border: 1px solid rgba(255,68,68,0.3);
+    border-left: 4px solid var(--accent2);
+    padding: 20px 24px;
+    margin-top: 20px;
+    border-radius: 2px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
-    color: var(--danger);
-    margin-top: 16px;
     display: none;
   }
 
-  .error-box.visible { display: block; }
-
-  /* Divider */
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 32px 0;
-  }
-
-  /* Animations */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .reset-wrap {
-    margin-top: 32px;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  /* Manual fallback table */
-  .manual-section { display: none; }
-  .manual-section.visible { display: block; }
-
-  .row-inputs {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
-    align-items: center;
-  }
-
-  .row-inputs input {
-    width: 100%;
-  }
-
-  .row-inputs input:first-child {
-    font-family: 'IBM Plex Sans', sans-serif;
-  }
-
-  .col-headers {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .col-headers span {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--accent);
-    padding: 0 4px;
-  }
-
-  .add-row-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    background: transparent;
-    border: 1px dashed var(--border);
-    color: var(--muted);
-    padding: 8px 16px;
-    cursor: pointer;
-    border-radius: 2px;
-    margin-top: 4px;
-    transition: all 0.15s;
-  }
-
-  .add-row-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .remove-row {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 16px;
-    background: transparent;
-    border: none;
-    color: var(--danger);
-    cursor: pointer;
-    padding: 0 4px;
-    opacity: 0.5;
-  }
-
-  .remove-row:hover { opacity: 1; }
-
-  .toggle-method {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    cursor: pointer;
-    text-decoration: underline dotted;
-    background: none;
-    border: none;
-    padding: 0;
-    margin-top: 8px;
-    display: inline-block;
-  }
-
-  .toggle-method:hover { color: var(--accent); }
-
-  .method-tabs {
-    display: flex;
-    gap: 0;
-    margin-bottom: 20px;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    width: fit-content;
-  }
-
-  .method-tab {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 8px 18px;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    transition: all 0.15s;
-  }
-
-  .method-tab.active {
-    background: var(--accent);
-    color: #0a0a0f;
-    font-weight: 700;
+  @media (max-width: 600px) {
+    header { padding: 32px 20px 20px; }
+    .main { padding: 24px 20px 60px; }
+    .ai-options { flex-direction: column; }
+    .btn-primary { width: 100%; justify-content: center; }
   }
 </style>
 </head>
 <body>
-<div class="container">
 
-  <header>
-    <div class="header-tag">// PUC · Sistema de Análise Acadêmica</div>
-    <h1>NOTAS &<br><span>FREQUÊNCIA</span></h1>
-    <p class="subtitle">Envie seu relatório e descubra exatamente onde você está.</p>
-  </header>
+<header>
+  <div class="tag">// Ferramenta Acadêmica · PUC</div>
+  <h1>Análise de<br><span>Notas &amp; Faltas</span></h1>
+  <p>Envie o print do portal, informe sua nota da AI, e veja o que precisa fazer.</p>
+</header>
 
-  <!-- Step 1: Upload or manual -->
-  <div class="step" id="step1">
-    <div class="step-label">Passo 01</div>
-    <h2>SEU RELATÓRIO</h2>
-    <p>Escolha como deseja informar seus dados: enviando a foto/print do relatório da PUC, ou preenchendo manualmente.</p>
+<div class="main">
 
-    <div class="method-tabs">
-      <button class="method-tab active" onclick="setMethod('photo')">📸 Foto / Print</button>
-      <button class="method-tab" onclick="setMethod('manual')">✏️ Manual</button>
+  <!-- STEP 1: Upload -->
+  <div class="step active" id="step1">
+    <div class="upload-zone" id="dropZone">
+      <input type="file" id="fileInput" accept="image/*">
+      <span class="icon">📄</span>
+      <h2>Arraste ou clique para enviar</h2>
+      <p>Print do relatório de notas e frequência do portal PUC</p>
+    </div>
+    <div class="preview-wrap" id="previewWrap">
+      <img id="previewImg" src="" alt="Preview">
+      <span class="badge">✓ Imagem carregada</span>
     </div>
 
-    <!-- Photo mode -->
-    <div id="photo-mode">
-      <div class="upload-zone" id="upload-zone">
-        <input type="file" id="file-input" accept="image/*" onchange="handleFile(this)">
-        <div class="upload-icon">📄</div>
-        <div class="upload-text">
-          <strong>Clique aqui</strong> ou arraste sua foto/print<br>
-          <span style="font-size:11px">JPG, PNG, WEBP — relatório do Portal PUC</span>
-        </div>
+    <div class="ai-box" id="aiBox" style="display:none">
+      <div class="label">// pergunta importante</div>
+      <h3>Qual foi sua nota da AI?<br>
+        <small style="font-size:14px;font-weight:300;color:var(--muted)">Lembrando: a AI é uma prova única, e essa mesma nota vale para todas as disciplinas, somando até 1 ponto na N2.</small>
+      </h3>
+      <div class="ai-options">
+        <button onclick="selectAI(0)" data-val="0">Calcular com 0</button>
+        <button onclick="selectAI(1)" data-val="1">Nota máxima (1,0)</button>
+        <button onclick="selectAI(null)" data-val="custom">Informar nota</button>
       </div>
-      <img id="preview-img" alt="Preview do relatório">
-    </div>
-
-    <!-- Manual mode -->
-    <div id="manual-mode" class="manual-section">
-      <div class="col-headers">
-        <span>Disciplina</span>
-        <span>Aulas previstas</span>
-        <span>Aulas dadas</span>
-        <span>Presenças</span>
-        <span>N1</span>
+      <div class="ai-custom" id="customInput" style="display:none">
+        <label>Minha nota na AI:</label>
+        <input type="number" id="aiNoteInput" min="0" max="1" step="0.01" placeholder="0.00">
       </div>
-      <div id="rows-container"></div>
-      <button class="add-row-btn" onclick="addRow()">+ Adicionar disciplina</button>
     </div>
 
-  </div>
+    <div class="error-box" id="errorBox"></div>
 
-  <!-- Step 2: AI Score -->
-  <div class="step" id="step2" style="display:none">
-    <div class="step-label">Passo 02</div>
-    <h2>NOTA DA AI</h2>
-    <div class="ai-callout">
-      <strong>Qual foi sua nota da AI?</strong><br>
-      Lembrando: a AI é uma prova única e essa mesma nota vale para todas as disciplinas, somando até 1 ponto na N2. Se ainda não souber, posso calcular com 0, com 1 ponto máximo, ou com uma nota estimada.
-    </div>
-    <div class="ai-options">
-      <button class="ai-opt-btn" onclick="setAI(0)">Ainda não fiz / 0</button>
-      <button class="ai-opt-btn" onclick="setAI(1)">Máximo (1,0)</button>
-      <button class="ai-opt-btn" onclick="setAI(0.5)">Estimado (0,5)</button>
-      <button class="ai-opt-btn" id="custom-ai-btn" onclick="focusAIInput()">Outra nota →</button>
-    </div>
-    <div class="input-group">
-      <input type="number" id="ai-score" placeholder="0.0" min="0" max="1" step="0.1" style="display:none">
-      <button class="btn btn-primary" id="calc-btn" onclick="calculate()" disabled>CALCULAR →</button>
-    </div>
+    <button class="btn-primary" id="analyzeBtn" onclick="analyze()" disabled>
+      ⚡ Analisar Relatório
+    </button>
+
     <div class="loading" id="loading">
-      <div class="spinner"></div>
-      <span id="loading-text">Analisando relatório com IA...</span>
+      <div class="loader-bar" style="width:100%"></div>
+      <p>Lendo imagem e processando dados...</p>
     </div>
-    <div class="error-box" id="error-box"></div>
   </div>
 
-  <!-- Results -->
-  <div id="results">
-    <div class="step">
-      <div class="step-label">Resultado</div>
-      <h2>ANÁLISE COMPLETA</h2>
-      <div class="result-table-wrap">
-        <table id="result-table">
-          <thead>
-            <tr>
-              <th>Disciplina</th>
-              <th>Faltas atuais</th>
-              <th>Pode faltar ainda</th>
-              <th>N1</th>
-              <th>AI</th>
-              <th>Precisa na prova N2</th>
-              <th>Situação</th>
-            </tr>
-          </thead>
-          <tbody id="result-tbody"></tbody>
-        </table>
-      </div>
-      <div class="summary-grid" id="summary-grid"></div>
-      <div class="reset-wrap">
-        <button class="btn btn-ghost" onclick="reset()">← Nova análise</button>
-      </div>
+  <!-- STEP 2: Results -->
+  <div class="step" id="step2">
+    <div class="result-header">
+      <div class="tag">// resultado</div>
+      <h2>Relatório Gerado</h2>
     </div>
+
+    <div id="summaryGrid" class="summary-grid"></div>
+    <div class="table-wrap"><table id="resultTable"></table></div>
+    <div id="finalNotes" style="margin-bottom:32px"></div>
+
+    <button class="btn-ghost" onclick="reset()">← Analisar outro relatório</button>
   </div>
 
 </div>
 
 <script>
-  // ─── State ───────────────────────────────────────────
-  let method = 'photo';
-  let uploadedFile = null;
-  let aiScore = null;
-  let parsedData = null; // [{name, aulas_previstas, aulas_dadas, presencas, n1}]
+let imageBase64 = null;
+let aiNote = null;
 
-  // ─── Method tabs ─────────────────────────────────────
-  function setMethod(m) {
-    method = m;
-    document.querySelectorAll('.method-tab').forEach((t, i) => {
-      t.classList.toggle('active', (i === 0 && m === 'photo') || (i === 1 && m === 'manual'));
-    });
-    document.getElementById('photo-mode').style.display = m === 'photo' ? 'block' : 'none';
-    document.getElementById('manual-mode').classList.toggle('visible', m === 'manual');
-    if (m === 'manual' && document.getElementById('rows-container').children.length === 0) {
-      for (let i = 0; i < 4; i++) addRow();
+// Upload handling
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const previewWrap = document.getElementById('previewWrap');
+const previewImg = document.getElementById('previewImg');
+const aiBox = document.getElementById('aiBox');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const errorBox = document.getElementById('errorBox');
+
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imageBase64 = ev.target.result.split(',')[1];
+    previewImg.src = ev.target.result;
+    previewWrap.style.display = 'block';
+    aiBox.style.display = 'block';
+    checkReady();
+  };
+  reader.readAsDataURL(file);
+}
+
+function selectAI(val) {
+  document.querySelectorAll('.ai-options button').forEach(b => b.classList.remove('selected'));
+  const customDiv = document.getElementById('customInput');
+  if (val === null) {
+    customDiv.style.display = 'flex';
+    document.querySelector('[data-val="custom"]').classList.add('selected');
+    aiNote = null;
+  } else {
+    customDiv.style.display = 'none';
+    aiNote = val;
+    document.querySelector(`[data-val="${val}"]`).classList.add('selected');
+  }
+  checkReady();
+}
+
+document.getElementById('aiNoteInput').addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  aiNote = (!isNaN(v) && v >= 0 && v <= 1) ? v : null;
+  checkReady();
+});
+
+function checkReady() {
+  analyzeBtn.disabled = !(imageBase64 && aiNote !== null);
+}
+
+async function analyze() {
+  errorBox.style.display = 'none';
+  analyzeBtn.disabled = true;
+  document.getElementById('loading').classList.add('visible');
+
+  const prompt = `Você receberá a imagem de um relatório acadêmico da PUC com notas e frequência.
+
+A nota da AI do aluno é: ${aiNote} (escala de 0 a 1 ponto).
+
+Analise a imagem e extraia os dados de cada disciplina. Para cada disciplina, faça os seguintes cálculos:
+
+FREQUÊNCIA:
+- faltas_atuais = aulas_ministradas - numero_de_presencas
+- maximo_faltas = floor(aulas_previstas * 0.25)
+- pode_faltar_ainda = maximo_faltas - faltas_atuais (pode ser negativo)
+
+NOTAS:
+- N2_necessaria_total = (6 - N1 * 0.4) / 0.6
+- nota_necessaria_prova_N2 = N2_necessaria_total - ${aiNote}
+  (se esse valor for <= 0, significa que já está aprovado mesmo sem tirar nada na prova da N2)
+
+SITUAÇÃO de cada disciplina:
+- Se faltas_atuais > maximo_faltas: situacao = "Se Fudeu, reprovou por falta."
+- Senão, se nota_necessaria_prova_N2 > 10: situacao = "Se Fudeu, não dá pra recuperar essa nota."
+- Senão, se nota_necessaria_prova_N2 <= 0: situacao = "APROVADO (sem precisar de nota na prova N2)"
+- Senão: situacao = "Ainda dá, precisa tirar X na prova da N2." (onde X = nota_necessaria_prova_N2 com 2 casas decimais)
+
+Responda APENAS com um JSON válido, sem markdown, sem texto fora do JSON, no seguinte formato:
+{
+  "disciplinas": [
+    {
+      "nome": "nome da disciplina",
+      "aulas_previstas": número,
+      "aulas_ministradas": número,
+      "presencas": número,
+      "faltas_atuais": número,
+      "maximo_faltas": número,
+      "pode_faltar_ainda": número,
+      "N1": número,
+      "nota_AI": ${aiNote},
+      "N2_necessaria_total": número com 2 casas,
+      "nota_necessaria_prova_N2": número com 2 casas,
+      "situacao": "texto da situação"
     }
-    checkStep1Done();
-  }
+  ],
+  "criticas_frequencia": ["lista de disciplinas críticas em frequência (pode_faltar_ainda <= 3)"],
+  "criticas_nota": ["lista de disciplinas críticas em nota (nota_necessaria_prova_N2 >= 7)"],
+  "reprovadas_falta": ["disciplinas já reprovadas por falta"],
+  "impossiveis_nota": ["disciplinas impossíveis de recuperar por nota"]
+}`;
 
-  // ─── Manual rows ─────────────────────────────────────
-  let rowId = 0;
-  function addRow() {
-    const id = rowId++;
-    const div = document.createElement('div');
-    div.className = 'row-inputs';
-    div.id = 'row-' + id;
-    div.innerHTML = `
-      <input type="text" placeholder="Nome da disciplina" oninput="checkStep1Done()">
-      <input type="number" placeholder="Ex: 80" min="1" oninput="checkStep1Done()">
-      <input type="number" placeholder="Ex: 60" min="0" oninput="checkStep1Done()">
-      <input type="number" placeholder="Ex: 50" min="0" oninput="checkStep1Done()">
-      <input type="number" placeholder="Ex: 7.5" min="0" max="10" step="0.1" oninput="checkStep1Done()">
-      <button class="remove-row" onclick="removeRow(${id})">×</button>
-    `;
-    document.getElementById('rows-container').appendChild(div);
-  }
-
-  function removeRow(id) {
-    const el = document.getElementById('row-' + id);
-    if (el) el.remove();
-    checkStep1Done();
-  }
-
-  function getManualData() {
-    const rows = document.querySelectorAll('#rows-container .row-inputs');
-    const data = [];
-    rows.forEach(row => {
-      const inputs = row.querySelectorAll('input');
-      const name = inputs[0].value.trim();
-      const prev = parseFloat(inputs[1].value);
-      const dados = parseFloat(inputs[2].value);
-      const pres = parseFloat(inputs[3].value);
-      const n1 = parseFloat(inputs[4].value);
-      if (name && !isNaN(prev) && !isNaN(dados) && !isNaN(pres) && !isNaN(n1)) {
-        data.push({ name, aulas_previstas: prev, aulas_dadas: dados, presencas: pres, n1 });
-      }
-    });
-    return data;
-  }
-
-  // ─── Upload ───────────────────────────────────────────
-  function handleFile(input) {
-    if (input.files && input.files[0]) {
-      uploadedFile = input.files[0];
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = document.getElementById('preview-img');
-        img.src = e.target.result;
-        img.style.display = 'block';
-      };
-      reader.readAsDataURL(uploadedFile);
-      checkStep1Done();
-    }
-  }
-
-  // Drag and drop
-  const zone = document.getElementById('upload-zone');
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragging'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragging'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('dragging');
-    if (e.dataTransfer.files[0]) {
-      const fi = document.getElementById('file-input');
-      // Simulate file input
-      uploadedFile = e.dataTransfer.files[0];
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const img = document.getElementById('preview-img');
-        img.src = ev.target.result;
-        img.style.display = 'block';
-      };
-      reader.readAsDataURL(uploadedFile);
-      checkStep1Done();
-    }
-  });
-
-  function checkStep1Done() {
-    let done = false;
-    if (method === 'photo') done = !!uploadedFile;
-    else done = getManualData().length > 0;
-    document.getElementById('step2').style.display = done ? 'block' : 'none';
-    document.getElementById('step2').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  // ─── AI score ─────────────────────────────────────────
-  function setAI(val) {
-    aiScore = val;
-    document.getElementById('ai-score').style.display = 'none';
-    document.querySelectorAll('.ai-opt-btn').forEach(b => b.classList.remove('active'));
-    const labels = [0, 1, 0.5];
-    const idx = labels.indexOf(val);
-    if (idx >= 0) document.querySelectorAll('.ai-opt-btn')[idx].classList.add('active');
-    document.getElementById('calc-btn').disabled = false;
-  }
-
-  function focusAIInput() {
-    const inp = document.getElementById('ai-score');
-    inp.style.display = 'block';
-    inp.focus();
-    document.querySelectorAll('.ai-opt-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('custom-ai-btn').classList.add('active');
-    inp.addEventListener('input', () => {
-      const v = parseFloat(inp.value);
-      if (!isNaN(v) && v >= 0 && v <= 1) {
-        aiScore = v;
-        document.getElementById('calc-btn').disabled = false;
-      }
-    });
-  }
-
-  // ─── Gemini API Key (substitua pela sua chave do Google AI Studio) ───
-  const GEMINI_API_KEY = 'AQ.Ab8RN6I0yJFKu00Y-5sLGRfvAcaZgREFinAGRKfyK-ie6ZEizg';
-
-  // ─── Main calculate ───────────────────────────────────
-  async function calculate() {
-    hideError();
-    if (aiScore === null) { showError('Informe a nota da AI antes de calcular.'); return; }
-
-    if (method === 'manual') {
-      parsedData = getManualData();
-      if (parsedData.length === 0) { showError('Preencha ao menos uma disciplina completa.'); return; }
-      renderResults(parsedData, aiScore);
-      return;
-    }
-
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'SUA_CHAVE_AQUI') {
-      showError('Configure a chave da API Gemini no código (variável GEMINI_API_KEY).');
-      return;
-    }
-
-    // Photo mode — use Gemini API to parse
-    showLoading('Lendo imagem com IA...');
-    document.getElementById('calc-btn').disabled = true;
-
-    try {
-      const base64 = await fileToBase64(uploadedFile);
-      const mediaType = uploadedFile.type || 'image/jpeg';
-
-      const prompt = `Você é um extrator de dados de relatórios acadêmicos da PUC.
-Dado uma imagem de relatório de notas/frequência, extraia TODAS as disciplinas e retorne SOMENTE um JSON válido, sem markdown, sem texto extra, sem backticks.
-Formato obrigatório:
-[
-  {
-    "name": "Nome da Disciplina",
-    "aulas_previstas": 80,
-    "aulas_dadas": 60,
-    "presencas": 50,
-    "n1": 7.5
-  }
-]
-Se algum campo não estiver visível, use null. Retorne APENAS o array JSON, nada mais.`;
-
-      updateLoading('Extraindo disciplinas e notas...');
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: prompt },
-                { inline_data: { mime_type: mediaType, data: base64 } }
-              ]
-            }],
-            generationConfig: { temperature: 0, maxOutputTokens: 1000 }
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'Erro na API Gemini');
-      }
-
-      updateLoading('Calculando situação acadêmica...');
-
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-      const clean = text.replace(/```json|```/g, '').trim();
-
-      let extracted;
-      try {
-        extracted = JSON.parse(clean);
-      } catch {
-        throw new Error('Não consegui ler a tabela da imagem. Tente usar o modo manual ou envie uma foto mais nítida.');
-      }
-
-      if (!Array.isArray(extracted) || extracted.length === 0) {
-        throw new Error('Nenhuma disciplina encontrada na imagem. Tente o modo manual.');
-      }
-
-      parsedData = extracted;
-      hideLoading();
-      renderResults(parsedData, aiScore);
-
-    } catch (err) {
-      hideLoading();
-      document.getElementById('calc-btn').disabled = false;
-      showError('Erro: ' + err.message);
-    }
-  }
-
-  // ─── Render results ───────────────────────────────────
-  function renderResults(disciplines, ai) {
-    const tbody = document.getElementById('result-tbody');
-    tbody.innerHTML = '';
-
-    const critFreq = [], critNota = [], repFalta = [], repNota = [];
-
-    disciplines.forEach(d => {
-      const aulas_prev = d.aulas_previstas ?? 0;
-      const aulas_dadas = d.aulas_dadas ?? 0;
-      const presencas = d.presencas ?? 0;
-      const n1 = d.n1 ?? 0;
-
-      const faltasAtuais = aulas_dadas - presencas;
-      const maxFaltas = Math.floor(aulas_prev * 0.25);
-      const podeFaltar = maxFaltas - faltasAtuais;
-      const pctFreq = aulas_dadas > 0 ? Math.round((presencas / aulas_dadas) * 100) : 100;
-
-      // Nota cálculo
-      // Média = N1*0.4 + N2*0.6 >= 6
-      // N2 total necessária = (6 - N1*0.4) / 0.6
-      // Prova N2 necessária = N2_total - AI
-      const n2Total = (6 - n1 * 0.4) / 0.6;
-      const provaN2 = n2Total - ai;
-
-      // Situação frequência
-      const reprovadoFalta = faltasAtuais > maxFaltas;
-      // Situação nota
-      const impossivelNota = provaN2 > 10 && !reprovadoFalta;
-      const aprovado = provaN2 <= 0;
-
-      // Track criticos
-      if (reprovadoFalta) repFalta.push(d.name);
-      else if (pctFreq < 80 && podeFaltar <= 4) critFreq.push(d.name);
-
-      if (impossivelNota) repNota.push(d.name);
-      else if (!reprovadoFalta && provaN2 > 7) critNota.push(d.name);
-
-      // Situação badge
-      let situacao = '', badgeClass = '';
-      if (reprovadoFalta) {
-        situacao = 'Se Fudeu, reprovou por falta.';
-        badgeClass = 'badge-danger';
-      } else if (impossivelNota) {
-        situacao = 'Se Fudeu, não dá pra recuperar essa nota.';
-        badgeClass = 'badge-danger';
-      } else if (aprovado) {
-        situacao = '—';
-        badgeClass = 'badge-neutral';
-      } else {
-        situacao = `Ainda dá, precisa tirar ${provaN2.toFixed(1)} na prova da N2.`;
-        badgeClass = provaN2 >= 7 ? 'badge-warn' : 'badge-ok';
-      }
-
-      const podeFaltarClass = podeFaltar < 0 ? 'num-danger' : podeFaltar <= 4 ? 'num-warn' : 'num-ok';
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${d.name ?? '—'}</td>
-        <td class="${faltasAtuais > maxFaltas ? 'num-danger' : ''}">${faltasAtuais}/${maxFaltas}</td>
-        <td class="${podeFaltarClass}">${podeFaltar < 0 ? '0 (excedeu!)' : podeFaltar}</td>
-        <td>${n1.toFixed(1)}</td>
-        <td>${ai.toFixed(1)}</td>
-        <td class="${!reprovadoFalta && !aprovado ? (provaN2 > 7 ? 'num-warn' : 'num-ok') : 'num-danger'}">${reprovadoFalta ? '—' : (aprovado ? '—' : provaN2.toFixed(1))}</td>
-        <td><span class="badge ${badgeClass}">${situacao}</span></td>
-      `;
-      tbody.appendChild(tr);
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageBase64 } },
+            { type: "text", text: prompt }
+          ]
+        }]
+      })
     });
 
-    // Summary
-    const grid = document.getElementById('summary-grid');
-    grid.innerHTML = '';
+    const data = await resp.json();
+    const raw = data.content.map(b => b.text || '').join('');
+    // Extract JSON robustly: find the outermost { ... }
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Nenhum JSON encontrado na resposta da IA.');
+    const parsed = JSON.parse(match[0]);
 
-    const cards = [
-      {
-        title: '🎯 Frequência Crítica',
-        items: critFreq.length > 0 ? critFreq : ['Nenhuma disciplina crítica'],
-        danger: false
-      },
-      {
-        title: '📉 Nota Crítica',
-        items: critNota.length > 0 ? critNota : ['Nenhuma disciplina crítica'],
-        danger: false
-      },
-      {
-        title: '💀 Já Reprovadas',
-        items: [...repFalta.map(n => n + ' (falta)'), ...repNota.map(n => n + ' (nota)')],
-        danger: true
-      }
-    ];
-
-    cards.forEach(c => {
-      const div = document.createElement('div');
-      div.className = 'summary-card' + (c.danger && c.items.length > 0 ? ' danger-card' : '');
-      div.innerHTML = `
-        <h3>${c.title}</h3>
-        <ul>${(c.items.length > 0 ? c.items : ['Tudo ok!']).map(i => `<li>${i}</li>`).join('')}</ul>
-      `;
-      grid.appendChild(div);
-    });
-
-    document.getElementById('results').classList.add('visible');
-    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  // ─── Helpers ──────────────────────────────────────────
-  function fileToBase64(file) {
-    return new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result.split(',')[1]);
-      r.onerror = () => rej(new Error('Falha ao ler arquivo'));
-      r.readAsDataURL(file);
-    });
-  }
-
-  function showLoading(msg) {
-    document.getElementById('loading').classList.add('visible');
-    document.getElementById('loading-text').textContent = msg;
-  }
-
-  function updateLoading(msg) {
-    document.getElementById('loading-text').textContent = msg;
-  }
-
-  function hideLoading() {
+    renderResults(parsed);
+  } catch (err) {
+    errorBox.textContent = '⚠ Erro ao processar a imagem. Verifique se o print está legível e tente novamente. Detalhe: ' + err.message;
+    errorBox.style.display = 'block';
+    analyzeBtn.disabled = false;
+  } finally {
     document.getElementById('loading').classList.remove('visible');
   }
+}
 
-  function showError(msg) {
-    const el = document.getElementById('error-box');
-    el.textContent = '⚠ ' + msg;
-    el.classList.add('visible');
+function renderResults(data) {
+  // Build table
+  const table = document.getElementById('resultTable');
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Disciplina</th>
+        <th>Faltas atuais</th>
+        <th>Pode faltar ainda</th>
+        <th>N1</th>
+        <th>Nota AI</th>
+        <th>Precisa tirar na N2</th>
+        <th>Situação</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${data.disciplinas.map(d => {
+        const sit = d.situacao || '';
+        let sitBadge = '';
+        if (sit.includes('reprovou por falta') || sit.includes('não dá pra recuperar')) {
+          sitBadge = `<span class="badge-danger">${sit}</span>`;
+        } else if (sit.includes('APROVADO')) {
+          sitBadge = `<span class="badge-ok">${sit}</span>`;
+        } else if (sit.includes('Ainda dá')) {
+          const nota = d.nota_necessaria_prova_N2;
+          const cls = nota >= 8 ? 'badge-warn' : 'badge-ok';
+          sitBadge = `<span class="${cls}">${sit}</span>`;
+        } else {
+          sitBadge = `<span class="badge-neutral">${sit || '—'}</span>`;
+        }
+
+        const pfa = d.pode_faltar_ainda;
+        const pfaClass = pfa < 0 ? 'badge-danger' : pfa <= 3 ? 'badge-warn' : 'badge-ok';
+        const pfaText = pfa < 0 ? `<span class="${pfaClass}">${pfa} ⚠</span>` : `<span class="${pfaClass}">${pfa}</span>`;
+
+        return `<tr>
+          <td><span class="disc-name">${d.nome}</span></td>
+          <td>${d.faltas_atuais} / ${d.maximo_faltas}</td>
+          <td>${pfaText}</td>
+          <td>${d.N1 != null ? d.N1.toFixed(1) : '—'}</td>
+          <td>${aiNote.toFixed(2)}</td>
+          <td>${d.nota_necessaria_prova_N2 <= 0 ? '—' : d.nota_necessaria_prova_N2.toFixed(2)}</td>
+          <td>${sitBadge}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>`;
+
+  // Summary boxes
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = '';
+
+  function makeBox(title, items, type, dotClass, emptyMsg) {
+    const box = document.createElement('div');
+    box.className = `sum-box ${type}`;
+    box.innerHTML = `<div class="label">${title}</div>
+      <ul>${items.length ? items.map(i => `<li><span class="dot ${dotClass}"></span>${i}</li>`).join('') : `<li><span class="dot dot-green"></span>${emptyMsg}</li>`}</ul>`;
+    return box;
   }
 
-  function hideError() {
-    document.getElementById('error-box').classList.remove('visible');
+  if (data.reprovadas_falta?.length || data.impossiveis_nota?.length) {
+    const all = [...(data.reprovadas_falta||[]).map(x=>x+' (falta)'), ...(data.impossiveis_nota||[]).map(x=>x+' (nota)')];
+    grid.appendChild(makeBox('⛔ Já era', all, 'critical', 'dot-red', '—'));
   }
 
-  function reset() {
-    uploadedFile = null;
-    aiScore = null;
-    parsedData = null;
-    document.getElementById('preview-img').style.display = 'none';
-    document.getElementById('preview-img').src = '';
-    document.getElementById('file-input').value = '';
-    document.getElementById('step2').style.display = 'none';
-    document.getElementById('ai-score').value = '';
-    document.getElementById('ai-score').style.display = 'none';
-    document.getElementById('calc-btn').disabled = true;
-    document.querySelectorAll('.ai-opt-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('results').classList.remove('visible');
-    document.getElementById('result-tbody').innerHTML = '';
-    hideError();
-    hideLoading();
-    // reset manual
-    document.getElementById('rows-container').innerHTML = '';
-    rowId = 0;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (data.criticas_frequencia?.length) {
+    grid.appendChild(makeBox('⚠ Críticas em frequência', data.criticas_frequencia, 'warn', 'dot-warn', 'Nenhuma'));
   }
+
+  if (data.criticas_nota?.length) {
+    grid.appendChild(makeBox('📚 Críticas em nota', data.criticas_nota, 'warn', 'dot-warn', 'Nenhuma'));
+  }
+
+  // Final notes
+  const fn = document.getElementById('finalNotes');
+  fn.innerHTML = `
+    <div class="ai-box" style="border-left-color:var(--accent)">
+      <div class="label">// resumo geral</div>
+      <p style="font-size:13px;line-height:1.8">
+        ${data.criticas_frequencia?.length ? `<strong style="color:var(--warn)">Frequência crítica:</strong> ${data.criticas_frequencia.join(', ')}.<br>` : ''}
+        ${data.criticas_nota?.length ? `<strong style="color:var(--warn)">Notas críticas:</strong> ${data.criticas_nota.join(', ')}.<br>` : ''}
+        ${data.reprovadas_falta?.length ? `<strong style="color:var(--accent2)">Reprovadas por falta:</strong> ${data.reprovadas_falta.join(', ')}.<br>` : ''}
+        ${data.impossiveis_nota?.length ? `<strong style="color:var(--accent2)">Impossíveis por nota:</strong> ${data.impossiveis_nota.join(', ')}.<br>` : ''}
+        ${!data.criticas_frequencia?.length && !data.criticas_nota?.length && !data.reprovadas_falta?.length && !data.impossiveis_nota?.length ? '✅ Tudo sob controle — nenhuma situação crítica identificada.' : ''}
+      </p>
+    </div>`;
+
+  document.getElementById('step1').classList.remove('active');
+  document.getElementById('step2').classList.add('active');
+}
+
+function reset() {
+  imageBase64 = null;
+  aiNote = null;
+  fileInput.value = '';
+  previewWrap.style.display = 'none';
+  aiBox.style.display = 'none';
+  analyzeBtn.disabled = true;
+  document.getElementById('customInput').style.display = 'none';
+  document.querySelectorAll('.ai-options button').forEach(b => b.classList.remove('selected'));
+  errorBox.style.display = 'none';
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('step1').classList.add('active');
+}
 </script>
 </body>
 </html>
